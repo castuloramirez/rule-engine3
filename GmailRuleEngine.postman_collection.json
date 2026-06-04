@@ -1,0 +1,128 @@
+{
+  "info": {
+    "name": "Gmail Rule Engine — AI + Legacy Engine",
+    "description": "Complete Postman collection.\n\n🤖 /api/rules/* — New engine with AI classification\n⚙️ /api/legacy/* — Legacy engine (same scopeSearch/SearchWord/Regex logic as your RuleEngine.java)\n\nStart server: mvn spring-boot:run\nBase URL: http://localhost:8080",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🟢 Health and Status",
+      "item": [
+        { "name": "GET — AI Engine Status",     "request": { "method": "GET", "url": "{{baseUrl}}/api/rules/status" } },
+        { "name": "GET — Legacy Engine Status",  "request": { "method": "GET", "url": "{{baseUrl}}/api/legacy/status" } },
+        { "name": "GET — All Loaded Processes",  "request": { "method": "GET", "url": "{{baseUrl}}/api/legacy/processes", "description": "Shows all processes loaded from rules-legacy.yml with their steps." } },
+        { "name": "GET — Actuator Health",       "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" } }
+      ]
+    },
+    {
+      "name": "⚙️ Legacy Engine — Quick Tests",
+      "item": [
+        { "name": "LEGACY TEST — Invoice",   "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=invoice",     "query": [{ "key": "type", "value": "invoice"     }] }, "description": "SearchWord/Contains: subject has 'invoice' → InvoiceProcess → Category=Invoice, Status=WaitingForApproval" } },
+        { "name": "LEGACY TEST — Support",   "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=support",     "query": [{ "key": "type", "value": "support"     }] }, "description": "SearchWord/Contains: subject+body has 'help/issue/error' → SupportProcess → Category=Support" } },
+        { "name": "LEGACY TEST — Spam",      "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=spam",        "query": [{ "key": "type", "value": "spam"        }] }, "description": "SearchWord/Contains: body has 'unsubscribe' → SpamProcess → Category=Spam, Status=Closed" } },
+        { "name": "LEGACY TEST — Urgent",    "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=urgent",      "query": [{ "key": "type", "value": "urgent"      }] }, "description": "Regex on subject: matches 'urgent|critical|emergency' → UrgentProcess → Category=Urgent, Status=EscalationRequired" } },
+        { "name": "LEGACY TEST — Newsletter","request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=newsletter",  "query": [{ "key": "type", "value": "newsletter"  }] }, "description": "SearchWord: body has 'weekly digest' → NewsletterProcess → Category=Newsletter" } },
+        { "name": "LEGACY TEST — Policy Extraction", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=policy", "query": [{ "key": "type", "value": "policy" }] }, "description": "RegexFirstMatch: extracts policyNumber (10 digits) and claimNumber (NNN-N-NNNNN-NN) from body" } },
+        { "name": "LEGACY TEST — Domain Routing", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/legacy/test?type=domain", "query": [{ "key": "type", "value": "domain" }] }, "description": "SearchWord/Contains on From field: '@support.com' → SenderDomainProcess → Category=Support" } }
+      ]
+    },
+    {
+      "name": "⚙️ Legacy Engine — Full Payload POST /api/legacy/evaluate",
+      "item": [
+        {
+          "name": "LEGACY — Invoice (SearchWord Contains)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"billing@acmecorp.com\",\n  \"to\":          \"you@gmail.com\",\n  \"subject\":     \"Invoice #1042 from Acme Corp — March 2026\",\n  \"body_plain\":  \"Please find your invoice for March 2026. Amount due $1250. Payment due by March 30.\",\n  \"date\":        \"2026-03-13T09:23:14Z\",\n  \"message_id\":  \"<invoice-001@mail.gmail.com>\",\n  \"attachments\": [\"https://s3.amazonaws.com/invoice-1042.pdf\"]\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Expected:\n  category: Invoice\n  status: WaitingForApproval\n  passedSteps: [P001-S001, P001-S002, P001-S003]\n  columnUpdates: [Category=Invoice, StatusMVP=WaitingForApproval]"
+          }
+        },
+        {
+          "name": "LEGACY — Urgent (Regex searchMethod)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"alerts@monitoring.com\",\n  \"to\":          \"you@gmail.com\",\n  \"subject\":     \"CRITICAL: Action required — Production server down\",\n  \"body_plain\":  \"Your production server has been unreachable for 10 minutes. Immediate action required.\",\n  \"date\":        \"2026-03-13T09:45:00Z\",\n  \"message_id\":  \"<urgent-001@mail.gmail.com>\",\n  \"attachments\": []\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Regex matches 'critical|action required' in Subject\nExpected: category=Urgent, status=EscalationRequired"
+          }
+        },
+        {
+          "name": "LEGACY — Policy + Claim (RegexFirstMatch)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"client@insurance.com\",\n  \"to\":          \"you@company.com\",\n  \"subject\":     \"Policy renewal — Policy 5500002597\",\n  \"body_plain\":  \"Your policy 5500002597 is due for renewal. Claim reference 207-2-13740-22 has been registered.\",\n  \"date\":        \"2026-03-13T11:00:00Z\",\n  \"message_id\":  \"<policy-001@mail.gmail.com>\",\n  \"attachments\": []\n}", "options": { "raw": { "language": "json" } } },
+            "description": "RegexFirstMatch extracts:\n  policyNumber: 5500002597\n  claimNumber:  207-2-13740-22"
+          }
+        },
+        {
+          "name": "LEGACY — No Match (General fallback)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"nobody@example.com\",\n  \"to\":          \"you@gmail.com\",\n  \"subject\":     \"Random email with no matching keywords\",\n  \"body_plain\":  \"Just a regular conversation with nothing specific.\",\n  \"date\":        \"2026-03-13T12:00:00Z\",\n  \"message_id\":  \"<nomatch-001@mail.gmail.com>\",\n  \"attachments\": []\n}", "options": { "raw": { "language": "json" } } },
+            "description": "No process matches\nExpected: category=General (default), all processes stop at step 1, stoppedAt list populated"
+          }
+        },
+        {
+          "name": "LEGACY — Multi-Process (Support + Urgent both match)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"manager@company.com\",\n  \"to\":          \"support@yourapp.com\",\n  \"subject\":     \"URGENT: Critical bug in production — need help immediately\",\n  \"body_plain\":  \"We have a critical problem. System crashed 30 min ago. Cannot recover. Emergency. Please help us immediately.\",\n  \"date\":        \"2026-03-13T14:00:00Z\",\n  \"message_id\":  \"<multi-001@mail.gmail.com>\",\n  \"attachments\": []\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Both SupportProcess AND UrgentProcess match.\nMultiple processesRun, multiple columnUpdates.\nLast SET wins for final category."
+          }
+        },
+        {
+          "name": "LEGACY — Negation Test (NOT Contains)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"noreply@shop.com\",\n  \"to\":          \"you@gmail.com\",\n  \"subject\":     \"Your order has been shipped\",\n  \"body_plain\":  \"Good news! Your order #45678 has shipped. Track it at: track.shop.com/45678\",\n  \"date\":        \"2026-03-13T16:00:00Z\",\n  \"message_id\":  \"<shipped-001@mail.gmail.com>\",\n  \"attachments\": []\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Contains 'order' → InvoiceProcess step 1 passes (searchTerm includes 'order')\nTests the 'order' keyword in the semicolon list: invoice;billing;payment;receipt;order"
+          }
+        },
+        {
+          "name": "LEGACY — Spam (ExclusionWords simulation)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/legacy/evaluate",
+            "body": { "mode": "raw", "raw": "{\n  \"from\":        \"deals@megastore.com\",\n  \"to\":          \"you@gmail.com\",\n  \"subject\":     \"Special offer: 80% off everything today only\",\n  \"body_plain\":  \"Huge promotional sale! Limited time special offer. Click here to shop now. To unsubscribe from these emails click here.\",\n  \"date\":        \"2026-03-13T08:00:00Z\",\n  \"message_id\":  \"<spam-001@mail.gmail.com>\",\n  \"attachments\": []\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Body contains 'unsubscribe' and 'promotional'\nExpected: SpamProcess fires → Category=Spam, Status=Closed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Engine — Quick Tests /api/rules/test",
+      "item": [
+        { "name": "AI TEST — Invoice",    "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/rules/test?type=invoice",    "query": [{ "key": "type", "value": "invoice"    }] } } },
+        { "name": "AI TEST — Support",    "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/rules/test?type=support",    "query": [{ "key": "type", "value": "support"    }] } } },
+        { "name": "AI TEST — Spam",       "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/rules/test?type=spam",       "query": [{ "key": "type", "value": "spam"       }] } } },
+        { "name": "AI TEST — Urgent",     "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/rules/test?type=urgent",     "query": [{ "key": "type", "value": "urgent"     }] } } },
+        { "name": "AI TEST — Attachment", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/rules/test?type=attachment", "query": [{ "key": "type", "value": "attachment" }] } } },
+        { "name": "AI TEST — Newsletter", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/rules/test?type=newsletter", "query": [{ "key": "type", "value": "newsletter" }] } } }
+      ]
+    },
+    {
+      "name": "📊 Query Processed Emails (AI Engine H2 DB)",
+      "item": [
+        { "name": "GET — All Emails",          "request": { "method": "GET", "url": "{{baseUrl}}/api/rules/emails" } },
+        { "name": "GET — Filter by INVOICE",   "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/rules/emails?category=INVOICE", "query": [{ "key": "category", "value": "INVOICE" }] } } },
+        { "name": "GET — Filter by processed", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/rules/emails?status=processed", "query": [{ "key": "status", "value": "processed" }] } } },
+        { "name": "GET — Email by ID 1",       "request": { "method": "GET", "url": "{{baseUrl}}/api/rules/emails/1" } }
+      ]
+    }
+  ]
+}

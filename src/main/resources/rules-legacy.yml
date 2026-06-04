@@ -1,0 +1,360 @@
+# =============================================================================
+# rules-legacy.yml
+# =============================================================================
+# This file replaces the Dataverse new_mvpprocesses + new_mvpwkses tables.
+# Each process mirrors a row in new_mvpprocesses.
+# Each step mirrors a row in new_mvpwkses.
+#
+# Field mapping (Dataverse column → YAML field):
+#   new_processid          → processId
+#   new_processname        → processName
+#   new_isenabled          → enabled
+#   new_wksid              → id
+#   new_wksname            → name
+#   new_type               → type
+#   new_searchmethod       → searchMethod
+#   new_searchcondition    → condition
+#   new_searchterm         → searchTerm
+#   new_searchin           → searchIn
+#   new_searchcasesensitive→ caseSensitive  ("1"=yes, "0"=no)
+#   new_negation           → negation       ("1"=NOT, "0"=normal)
+#   new_updatecolumn       → updateColumn
+#   new_updatevalue        → updateValue
+#   new_incl_excl          → inclExcl       (semicolon-separated for Inclusion/Exclusion)
+#   uniqa_new_inmemory     → inMemory       (for IF type)
+#   new_previous           → previous
+#   new_next               → next
+#
+# searchIn values: Body, Subject, From, To, CC, BCC  (comma-separated for multiple)
+# searchMethod:    SearchWord | Regex | RegexFirstMatch
+# condition:       Contains | Equals | gmi
+# type:            SearchWord | Set | Get | If | Declaration | SetVariable |
+#                  Operation | Case | InclusionWords | ExclusionWords
+# =============================================================================
+
+legacy:
+  processes:
+
+    # =========================================================================
+    # PROCESS 1: Invoice Detection
+    # Matches emails about invoices, billing, payments, receipts
+    # Sets Category=Invoice
+    # =========================================================================
+    - processId:   "P001"
+      processName: "InvoiceProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Subject must contain invoice-related keywords
+        - id:           "P001-S001"
+          name:         "SubjectContainsInvoiceOrBilling"
+          type:         "SearchWord"
+          searchMethod: "SearchWord"
+          condition:    "Contains"
+          searchTerm:   "invoice;billing;payment;receipt;order"
+          searchIn:     "Subject"
+          caseSensitive: "0"
+          negation:      "0"
+          priority:      1
+
+        # Step 2: Set Category = Invoice
+        - id:           "P001-S002"
+          name:         "SetCategoryInvoice"
+          type:         "Set"
+          searchMethod: "SearchWord"
+          condition:    "Contains"
+          searchTerm:   ""
+          searchIn:     "Subject"
+          caseSensitive: "0"
+          negation:      "0"
+          updateColumn: "Category"
+          updateValue:  "Invoice"
+          priority:      2
+
+        # Step 3: Set Status = WaitingForApproval
+        - id:           "P001-S003"
+          name:         "SetStatusWaiting"
+          type:         "Set"
+          updateColumn: "StatusMVP"
+          updateValue:  "WaitingForApproval"
+          priority:      3
+
+    # =========================================================================
+    # PROCESS 2: Support / Help Request Detection
+    # Matches emails asking for help, reporting issues, creating tickets
+    # =========================================================================
+    - processId:   "P002"
+      processName: "SupportProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Subject or Body contains support-related keywords
+        - id:           "P002-S001"
+          name:         "CheckSupportKeywords"
+          type:         "SearchWord"
+          searchMethod: "SearchWord"
+          condition:    "Contains"
+          searchTerm:   "help;support;issue;problem;bug;error;cannot;ticket"
+          searchIn:     "Subject,Body"
+          caseSensitive: "0"
+          negation:      "0"
+          priority:      1
+
+        # Step 2: Set Category = Support
+        - id:           "P002-S002"
+          name:         "SetCategorySupport"
+          type:         "Set"
+          updateColumn: "Category"
+          updateValue:  "Support"
+          priority:      2
+
+        # Step 3: Set Status = Open
+        - id:           "P002-S003"
+          name:         "SetStatusOpen"
+          type:         "Set"
+          updateColumn: "StatusMVP"
+          updateValue:  "Open"
+          priority:      3
+
+    # =========================================================================
+    # PROCESS 3: Spam / Promotional Email Detection
+    # Exclusion: stops if "unsubscribe" found in body
+    # =========================================================================
+    - processId:   "P003"
+      processName: "SpamProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Body OR Subject contains spam keywords
+        - id:           "P003-S001"
+          name:         "CheckSpamKeywords"
+          type:         "SearchWord"
+          searchMethod: "SearchWord"
+          condition:    "Contains"
+          searchTerm:   "unsubscribe;opt-out;promotional;special offer;click here;limited time"
+          searchIn:     "Body,Subject"
+          caseSensitive: "0"
+          negation:      "0"
+          priority:      1
+
+        # Step 2: Set Category = Spam
+        - id:           "P003-S002"
+          name:         "SetCategorySpam"
+          type:         "Set"
+          updateColumn: "Category"
+          updateValue:  "Spam"
+          priority:      2
+
+        # Step 3: Set Status = Closed
+        - id:           "P003-S003"
+          name:         "SetStatusClosed"
+          type:         "Set"
+          updateColumn: "StatusMVP"
+          updateValue:  "Closed"
+          priority:      3
+
+    # =========================================================================
+    # PROCESS 4: Urgent Email Detection
+    # Uses regex to detect urgency patterns + sets high-priority flag
+    # =========================================================================
+    - processId:   "P004"
+      processName: "UrgentProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Regex on subject for urgency words (case-insensitive)
+        - id:           "P004-S001"
+          name:         "RegexUrgentSubject"
+          type:         "SearchWord"
+          searchMethod: "Regex"
+          condition:    "gmi"
+          searchTerm:   "urgent|asap|critical|emergency|immediately|action required"
+          searchIn:     "Subject"
+          caseSensitive: "0"
+          negation:      "0"
+          priority:      1
+
+        # Step 2: Set Category = Urgent
+        - id:           "P004-S002"
+          name:         "SetCategoryUrgent"
+          type:         "Set"
+          updateColumn: "Category"
+          updateValue:  "Urgent"
+          priority:      2
+
+        # Step 3: Set Status = EscalationRequired
+        - id:           "P004-S003"
+          name:         "SetStatusEscalation"
+          type:         "Set"
+          updateColumn: "StatusMVP"
+          updateValue:  "EscalationRequired"
+          priority:      3
+
+    # =========================================================================
+    # PROCESS 5: Policy Number Extraction
+    # Uses RegexFirstMatch to extract policy number from body
+    # =========================================================================
+    - processId:   "P005"
+      processName: "PolicyExtractionProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Extract policy number using regex (format: 10-digit number)
+        - id:           "P005-S001"
+          name:         "ExtractPolicyNumber"
+          type:         "SearchWord"
+          searchMethod: "RegexFirstMatch"
+          condition:    "gmi"
+          searchTerm:   "\\b\\d{10}\\b"
+          searchIn:     "Body,Subject"
+          caseSensitive: "0"
+          negation:      "0"
+          updateColumn: "PolicyNumber"
+          priority:      1
+
+    # =========================================================================
+    # PROCESS 6: Claim Number Extraction
+    # Extracts claim number pattern e.g. "207-2-13740-22"
+    # =========================================================================
+    - processId:   "P006"
+      processName: "ClaimExtractionProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Extract claim number using regex
+        - id:           "P006-S001"
+          name:         "ExtractClaimNumber"
+          type:         "SearchWord"
+          searchMethod: "RegexFirstMatch"
+          condition:    "gmi"
+          searchTerm:   "\\b\\d{3}-\\d-\\d{5}-\\d{2}\\b"
+          searchIn:     "Body,Subject"
+          caseSensitive: "0"
+          negation:      "0"
+          updateColumn: "ClaimNumber"
+          priority:      1
+
+    # =========================================================================
+    # PROCESS 7: Newsletter Detection
+    # Uses InclusionWords type — if word found in body → Continue (skip process)
+    # =========================================================================
+    - processId:   "P007"
+      processName: "NewsletterProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: Check newsletter keywords in subject
+        - id:           "P007-S001"
+          name:         "NewsletterKeywords"
+          type:         "SearchWord"
+          searchMethod: "SearchWord"
+          condition:    "Contains"
+          searchTerm:   "newsletter;weekly digest;weekly update;roundup;you are receiving this"
+          searchIn:     "Subject,Body"
+          caseSensitive: "0"
+          negation:      "0"
+          priority:      1
+
+        # Step 2: Set Category = Newsletter
+        - id:           "P007-S002"
+          name:         "SetCategoryNewsletter"
+          type:         "Set"
+          updateColumn: "Category"
+          updateValue:  "Newsletter"
+          priority:      2
+
+    # =========================================================================
+    # PROCESS 8: Sender Domain Routing
+    # Uses Equals condition on From field to route by sender domain
+    # =========================================================================
+    - processId:   "P008"
+      processName: "SenderDomainProcess"
+      enabled:     true
+      branching:   false
+      steps:
+
+        # Step 1: From field contains a known support domain
+        - id:           "P008-S001"
+          name:         "CheckSupportDomain"
+          type:         "SearchWord"
+          searchMethod: "SearchWord"
+          condition:    "Contains"
+          searchTerm:   "@support.com;@helpdesk.com;@tickets.com"
+          searchIn:     "From"
+          caseSensitive: "0"
+          negation:      "0"
+          priority:      1
+
+        # Step 2: Set Category = Support (domain-based)
+        - id:           "P008-S002"
+          name:         "SetCategorySupportByDomain"
+          type:         "Set"
+          updateColumn: "Category"
+          updateValue:  "Support"
+          priority:      2
+
+    # =========================================================================
+    # PROCESS 9: Variable + Arithmetic Demo
+    # Declares variables, sums them, evaluates with Case
+    # Mirrors Declaration → SetVariable → Operation → Case flow
+    # =========================================================================
+    - processId:   "P009"
+      processName: "ArithmeticDemo"
+      enabled:     false   # Disabled by default — enable for testing
+      branching:   false
+      steps:
+
+        # Step 1: Declare variable A = 5
+        - id:           "P009-S001"
+          name:         "VarA"
+          type:         "Declaration"
+          searchMethod: "Numeric"
+          condition:    "Integer"
+          searchTerm:   "5"
+          searchIn:     ""
+          priority:      1
+
+        # Step 2: Declare variable B = 3
+        - id:           "P009-S002"
+          name:         "VarB"
+          type:         "Declaration"
+          searchMethod: "Numeric"
+          condition:    "Integer"
+          searchTerm:   "3"
+          searchIn:     ""
+          priority:      2
+
+        # Step 3: Operation — sum A + B → result stored in TotalAttachments
+        - id:           "P009-S003"
+          name:         "TotalAttachments"
+          type:         "Operation"
+          searchMethod: "Arithmetic"
+          condition:    "Sum"
+          searchTerm:   "VarA;VarB"
+          searchIn:     ""
+          priority:      3
+
+        # Step 4: Case — if TotalAttachments >= 5 → continue (pass)
+        - id:           "P009-S004"
+          name:         "CheckTotal"
+          type:         "Case"
+          searchMethod: "TotalAttachments"
+          condition:    ">="
+          searchTerm:   "5"
+          searchIn:     ""
+          priority:      4
+
+        # Step 5: Set Category = MultiAttachment
+        - id:           "P009-S005"
+          name:         "SetCategoryMultiAttach"
+          type:         "Set"
+          updateColumn: "Category"
+          updateValue:  "MultiAttachment"
+          priority:      5
