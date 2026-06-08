@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ruleengine.model.AIClassificationResult;
 import com.ruleengine.model.EmailPayload;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -29,9 +29,11 @@ import java.util.concurrent.TimeUnit;
  *   - Set:     ai.provider=keyword
  *   - Uses regex/keyword matching — good enough for demos
  */
-@Slf4j
+
 @Service
 public class AIClassifierService {
+
+    private static final Logger log = LogManager.getLogger(AIClassifierService.class);
 
     @Value("${ai.provider:keyword}")
     private String aiProvider;
