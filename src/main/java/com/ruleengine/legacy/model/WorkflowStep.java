@@ -1,98 +1,104 @@
 package com.ruleengine.legacy.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * WorkflowStep — represents one row from your Dataverse new_mvpwkses table.
- *
- * In production this is loaded dynamically from Dataverse via DataverseController.
- * In this standalone version, steps are defined in YAML (rules-legacy.yml) or
- * programmatically, perfectly mirroring the Dataverse schema.
  *
  * Field mapping:
  *   new_wksid              → id
  *   new_wksname            → name
- *   new_type               → type         (SearchWord, Regex, Set, Get, If, etc.)
- *   new_searchmethod       → searchMethod (SearchWord, Regex, RegexFirstMatch)
- *   new_searchcondition    → condition    (Contains, Equals)
- *   new_searchterm         → searchTerm   (the value to look for)
- *   new_searchin           → searchIn     (Body, Subject, From, To, CC, BCC)
- *   new_searchcasesensitive→ caseSensitive("1"=yes, "0"=no)
+ *   new_type               → type
+ *   new_searchmethod       → searchMethod
+ *   new_searchcondition    → condition
+ *   new_searchterm         → searchTerm
+ *   new_searchin           → searchIn
+ *   new_searchcasesensitive→ caseSensitive ("1"=yes, "0"=no)
  *   new_negation           → negation     ("1"=NOT, "0"=normal)
- *   new_updatecolumn       → updateColumn (column to SET)
- *   new_updatevalue        → updateValue  (value to SET)
- *   new_incl_excl          → inclExcl     (semicolon-separated inclusion/exclusion words)
- *   uniqa_new_inmemory     → inMemory     (memory key for IF-type checks)
+ *   new_updatecolumn       → updateColumn
+ *   new_updatevalue        → updateValue
+ *   new_incl_excl          → inclExcl
+ *   uniqa_new_inmemory     → inMemory
  *   new_processid          → processId
- *   new_previous           → previous     (for branching)
- *   new_next               → next         (for branching)
+ *   new_previous           → previous
+ *   new_next               → next
  *   new_priority           → priority
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class WorkflowStep {
+public record WorkflowStep(
 
-    private String id;
-    private String name;
+        String id,
+        String name,
 
-    /** Rule type: SearchWord | Regex | RegexFirstMatch | Set | Get | If | Declaration | SetVariable | Operation | Case | Placeholder | ColumnExpression | SendEmail | Attach | InclusionWords | ExclusionWords */
-    private String type;
+        /** SearchWord | Regex | RegexFirstMatch | Set | Get | If |
+         *  Declaration | SetVariable | Operation | Case |
+         *  Placeholder | ColumnExpression | SendEmail |
+         *  Attach | InclusionWords | ExclusionWords */
+        String type,
 
-    /** SearchWord | Regex | RegexFirstMatch */
-    private String searchMethod;
+        /** SearchWord | Regex | RegexFirstMatch */
+        String searchMethod,
 
-    /** Contains | Equals | gmi */
-    private String condition;
+        /** Contains | Equals | gmi */
+        String condition,
 
-    /** The search term(s) — semicolons separate multiple terms */
-    private String searchTerm;
+        /** Semicolons separate multiple terms */
+        String searchTerm,
 
-    /** Body, Subject, From, To, CC, BCC — comma separated for multiple fields */
-    private String searchIn;
+        /** Body, Subject, From, To, CC, BCC — comma-separated */
+        String searchIn,
 
-    /** "1" = case sensitive, "0" = case insensitive */
-    @Builder.Default
-    private String caseSensitive = "0";
+        /** "1" = case sensitive, "0" = case insensitive */
+        String caseSensitive,
 
-    /** "1" = NOT (negation), "0" = normal */
-    @Builder.Default
-    private String negation = "0";
+        /** "1" = NOT (negation), "0" = normal */
+        String negation,
 
-    /** Column to update when type=Set */
-    private String updateColumn;
+        /** Column to update when type=Set */
+        String updateColumn,
 
-    /** Value to set when type=Set */
-    private String updateValue;
+        /** Value to set when type=Set */
+        String updateValue,
 
-    /** Semicolon-separated inclusion/exclusion words */
-    private String inclExcl;
+        /** Semicolon-separated inclusion/exclusion words */
+        String inclExcl,
 
-    /** Memory key for IF-type checks */
-    private String inMemory;
+        /** Memory key for IF-type checks */
+        String inMemory,
 
-    /** Parent process id */
-    private String processId;
+        /** Parent process id */
+        String processId,
 
-    /** Previous step id (for branching) */
-    @Builder.Default
-    private String previous = "null";
+        /** Previous step id (for branching) */
+        String previous,
 
-    /** Next step id (for branching, semicolons for multiple paths) */
-    @Builder.Default
-    private String next = "null";
+        /** Next step id (for branching, semicolons for multiple paths) */
+        String next,
 
-    /** Error state id */
-    private String errorStateValue;
+        /** Error state id */
+        String errorStateValue,
 
-    /** Success state id */
-    private String successStateValue;
+        /** Success state id */
+        String successStateValue,
 
-    /** Execution order */
-    @Builder.Default
-    private int priority = 10;
+        /** Execution order */
+        int priority
+
+) {
+    // Compact constructor — normalises defaults before fields are sealed
+    public WorkflowStep {
+        caseSensitive    = defaultIfBlank(caseSensitive,    "0");
+        negation         = defaultIfBlank(negation,         "0");
+        previous         = defaultIfBlank(previous,         "null");
+        next             = defaultIfBlank(next,             "null");
+        errorStateValue  = defaultIfNull(errorStateValue,   null);
+        successStateValue = defaultIfNull(successStateValue, null);
+        // int fields cannot be null, so priority just needs a range guard
+        if (priority <= 0) priority = 10;
+    }
+
+    private static String defaultIfBlank(String value, String fallback) {
+        return (value == null || value.isBlank()) ? fallback : value;
+    }
+
+    private static String defaultIfNull(String value, String fallback) {
+        return value != null ? value : fallback;
+    }
 }
