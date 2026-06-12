@@ -4,8 +4,8 @@ import com.ruleengine.legacy.engine.LegacyRuleEngineRunner;
 import com.ruleengine.legacy.model.LegacyEngineResult;
 import com.ruleengine.legacy.model.LegacyRuleProcess;
 import com.ruleengine.model.EmailPayload;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,14 +13,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/legacy")
-@RequiredArgsConstructor
 public class LegacyRuleEngineController {
+
+    private static final Logger log = LogManager.getLogger(LegacyRuleEngineController.class);
 
     private final LegacyRuleEngineRunner  legacyRunner;
     private final List<LegacyRuleProcess> legacyProcesses;
+
+    public LegacyRuleEngineController(LegacyRuleEngineRunner legacyRunner, List<LegacyRuleProcess> legacyProcesses) {
+        this.legacyRunner = legacyRunner;
+        this.legacyProcesses = legacyProcesses;
+    }
 
     @PostMapping("/evaluate")
     public ResponseEntity<LegacyEngineResult> evaluate(
