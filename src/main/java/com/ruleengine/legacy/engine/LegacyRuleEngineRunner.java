@@ -3,7 +3,8 @@ package com.ruleengine.legacy.engine;
 import com.ruleengine.legacy.model.LegacyEngineResult;
 import com.ruleengine.legacy.model.LegacyRuleProcess;
 import com.ruleengine.model.EmailPayload;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,10 +21,9 @@ import java.util.List;
  *   4. All processes run independently (one stop doesn't block others)
  *   5. Collect final category, status, column values into LegacyEngineResult
  */
-@Slf4j
 @Component
 public class LegacyRuleEngineRunner {
-
+    private static final Logger log = LogManager.getLogger(LegacyRuleEngineRunner.class);
     /**
      * Run all processes against an email payload.
      *
@@ -43,7 +43,7 @@ public class LegacyRuleEngineRunner {
         context.addLog("StartingREv3.0.2");
 
         MVPMemory        memory    = new MVPMemory();
-        LegacyEngineResult result  = LegacyEngineResult.builder().build();
+        LegacyEngineResult result  = new LegacyEngineResult();
         LegacyProcessEvaluator evaluator = new LegacyProcessEvaluator(context, memory);
 
         String body    = nullSafe(payload.getBodyPlain());
