@@ -2,8 +2,8 @@ package com.ruleengine.legacy.engine;
 
 import com.ruleengine.legacy.model.LegacyRuleProcess;
 import com.ruleengine.legacy.model.WorkflowStep;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,9 +20,10 @@ import java.util.List;
  * Or just having rules-legacy.yml in src/main/resources is enough since
  * Spring Boot auto-loads YAML from classpath.
  */
-@Slf4j
 @Configuration
 public class LegacyRulesConfig {
+
+    private static final Logger log = LogManager.getLogger(LegacyRulesConfig.class);
 
     @Bean
     @ConfigurationProperties(prefix = "legacy")
@@ -63,29 +64,32 @@ public class LegacyRulesConfig {
         if (defs == null) return steps;
 
         for (LegacyProperties.StepDef d : defs) {
-            WorkflowStep step = WorkflowStep.builder()
-                    .id(           d.getId())
-                    .name(         d.getName())
-                    .type(         d.getType())
-                    .searchMethod( d.getSearchMethod())
-                    .condition(    d.getCondition())
-                    .searchTerm(   d.getSearchTerm())
-                    .searchIn(     d.getSearchIn())
-                    .caseSensitive(d.getCaseSensitive() != null ? d.getCaseSensitive() : "0")
-                    .negation(     d.getNegation()      != null ? d.getNegation()      : "0")
-                    .updateColumn( d.getUpdateColumn())
-                    .updateValue(  d.getUpdateValue())
-                    .inclExcl(     d.getInclExcl())
-                    .inMemory(     d.getInMemory())
-                    .priority(     d.getPriority())
-                    .previous(     d.getPrevious() != null ? d.getPrevious() : "null")
-                    .next(         d.getNext()     != null ? d.getNext()     : "null")
-                    .build();
+            WorkflowStep step = new WorkflowStep(
+                    d.getId(),
+                    d.getName(),
+                    d.getType(),
+                    d.getSearchMethod(),
+                    d.getCondition(),
+                    d.getSearchTerm(),
+                    d.getSearchIn(),
+                    d.getCaseSensitive(),   // compact constructor normalises null → "0"
+                    d.getNegation(),        // compact constructor normalises null → "0"
+                    d.getUpdateColumn(),
+                    d.getUpdateValue(),
+                    d.getInclExcl(),
+                    d.getInMemory(),
+                    d.getProcessId(),
+                    d.getPrevious(),        // compact constructor normalises null → "null"
+                    d.getNext(),            // compact constructor normalises null → "null"
+                    d.getErrorStateValue(),
+                    d.getSuccessStateValue(),
+                    d.getPriority()
+            );
             steps.add(step);
         }
 
         // Sort by priority
-        steps.sort(java.util.Comparator.comparingInt(WorkflowStep::getPriority));
+        steps.sort(java.util.Comparator.comparingInt(WorkflowStep::priority));
         return steps;
     }
 
@@ -93,21 +97,66 @@ public class LegacyRulesConfig {
     // POJO classes bound to rules-legacy.yml
     // -----------------------------------------------------------------------
 
-    @Data
     public static class LegacyProperties {
 
         private List<ProcessDef> processes;
 
-        @Data
+        public List<ProcessDef> getProcesses() {
+            return processes;
+        }
+
+        public void setProcesses(List<ProcessDef> processes) {
+            this.processes = processes;
+        }
+
         public static class ProcessDef {
             private String          processId;
             private String          processName;
             private boolean         enabled   = true;
             private boolean         branching = false;
             private List<StepDef>   steps;
+
+            public String getProcessId() {
+                return processId;
+            }
+
+            public void setProcessId(String processId) {
+                this.processId = processId;
+            }
+
+            public String getProcessName() {
+                return processName;
+            }
+
+            public void setProcessName(String processName) {
+                this.processName = processName;
+            }
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public boolean isBranching() {
+                return branching;
+            }
+
+            public void setBranching(boolean branching) {
+                this.branching = branching;
+            }
+
+            public List<StepDef> getSteps() {
+                return steps;
+            }
+
+            public void setSteps(List<StepDef> steps) {
+                this.steps = steps;
+            }
         }
 
-        @Data
         public static class StepDef {
             private String id;
             private String name;
@@ -128,6 +177,158 @@ public class LegacyRulesConfig {
             private String errorStateValue;
             private String successStateValue;
             private int    priority  = 10;
+
+            public String getId() {
+                return id;
+            }
+
+            public void setId(String id) {
+                this.id = id;
+            }
+
+            public String getName() {
+                return name;
+            }
+
+            public void setName(String name) {
+                this.name = name;
+            }
+
+            public String getType() {
+                return type;
+            }
+
+            public void setType(String type) {
+                this.type = type;
+            }
+
+            public String getSearchMethod() {
+                return searchMethod;
+            }
+
+            public void setSearchMethod(String searchMethod) {
+                this.searchMethod = searchMethod;
+            }
+
+            public String getCondition() {
+                return condition;
+            }
+
+            public void setCondition(String condition) {
+                this.condition = condition;
+            }
+
+            public String getSearchTerm() {
+                return searchTerm;
+            }
+
+            public void setSearchTerm(String searchTerm) {
+                this.searchTerm = searchTerm;
+            }
+
+            public String getSearchIn() {
+                return searchIn;
+            }
+
+            public void setSearchIn(String searchIn) {
+                this.searchIn = searchIn;
+            }
+
+            public String getCaseSensitive() {
+                return caseSensitive;
+            }
+
+            public void setCaseSensitive(String caseSensitive) {
+                this.caseSensitive = caseSensitive;
+            }
+
+            public String getNegation() {
+                return negation;
+            }
+
+            public void setNegation(String negation) {
+                this.negation = negation;
+            }
+
+            public String getUpdateColumn() {
+                return updateColumn;
+            }
+
+            public void setUpdateColumn(String updateColumn) {
+                this.updateColumn = updateColumn;
+            }
+
+            public String getUpdateValue() {
+                return updateValue;
+            }
+
+            public void setUpdateValue(String updateValue) {
+                this.updateValue = updateValue;
+            }
+
+            public String getInclExcl() {
+                return inclExcl;
+            }
+
+            public void setInclExcl(String inclExcl) {
+                this.inclExcl = inclExcl;
+            }
+
+            public String getInMemory() {
+                return inMemory;
+            }
+
+            public void setInMemory(String inMemory) {
+                this.inMemory = inMemory;
+            }
+
+            public String getProcessId() {
+                return processId;
+            }
+
+            public void setProcessId(String processId) {
+                this.processId = processId;
+            }
+
+            public String getPrevious() {
+                return previous;
+            }
+
+            public void setPrevious(String previous) {
+                this.previous = previous;
+            }
+
+            public String getNext() {
+                return next;
+            }
+
+            public void setNext(String next) {
+                this.next = next;
+            }
+
+            public String getErrorStateValue() {
+                return errorStateValue;
+            }
+
+            public void setErrorStateValue(String errorStateValue) {
+                this.errorStateValue = errorStateValue;
+            }
+
+            public String getSuccessStateValue() {
+                return successStateValue;
+            }
+
+            public void setSuccessStateValue(String successStateValue) {
+                this.successStateValue = successStateValue;
+            }
+
+            public int getPriority() {
+                return priority;
+            }
+
+            public void setPriority(int priority) {
+                this.priority = priority;
+            }
         }
     }
 }

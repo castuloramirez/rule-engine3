@@ -1,17 +1,19 @@
 package com.ruleengine.rules;
-
 import com.ruleengine.model.ActionTracker;
 import com.ruleengine.model.EmailPayload;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 // ============================================================================
 // AttachmentRule
 // ============================================================================
 
-@Slf4j
+
 @Component
 class AttachmentRule implements EmailRule {
+
+    private static final Logger log = LogManager.getLogger(AttachmentRule.class);
 
     @Override public String name()     { return "AttachmentRule"; }
     @Override public int    priority() { return 3; }
@@ -35,9 +37,9 @@ class AttachmentRule implements EmailRule {
 // SpamRule
 // ============================================================================
 
-@Slf4j
 @Component
 class SpamRule implements EmailRule {
+    private static final Logger log = LogManager.getLogger(SpamRule.class);
 
     @Override public String name()     { return "SpamRule"; }
     @Override public int    priority() { return 4; }
@@ -69,10 +71,10 @@ class SpamRule implements EmailRule {
 // UrgentRule
 // ============================================================================
 
-@Slf4j
 @Component
 class UrgentRule implements EmailRule {
 
+    private static final Logger log = LogManager.getLogger(UrgentRule.class);
     @Override public String name()     { return "UrgentRule"; }
     @Override public int    priority() { return 5; }
 
@@ -102,10 +104,9 @@ class UrgentRule implements EmailRule {
 // NewsletterRule
 // ============================================================================
 
-@Slf4j
 @Component
 class NewsletterRule implements EmailRule {
-
+    private static final Logger log = LogManager.getLogger(NewsletterRule.class);
     @Override public String name()     { return "NewsletterRule"; }
     @Override public int    priority() { return 6; }
 
@@ -135,10 +136,10 @@ class NewsletterRule implements EmailRule {
 // FallbackRule — always fires if nothing else matched
 // ============================================================================
 
-@Slf4j
+
 @Component
 class FallbackRule implements EmailRule {
-
+    private static final Logger log = LogManager.getLogger(FallbackRule.class);
     @Override public String name()     { return "FallbackRule"; }
     @Override public int    priority() { return 99; }
 

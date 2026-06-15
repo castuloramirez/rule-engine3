@@ -1,9 +1,9 @@
 package com.ruleengine.legacy.engine;
 
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,9 +21,10 @@ import java.util.regex.Pattern;
  *   getName()                      — strips file extension
  *   getValidAttachments()          — filters attachment names by pattern
  */
-@Slf4j
+
 public class StringHelper {
 
+    private static final Logger log = LogManager.getLogger(StringHelper.class);
     /**
      * Case-insensitive contains check.
      * Mirrors: StringHelper.checkContains(text, term)

@@ -1,7 +1,7 @@
 package com.ruleengine.legacy.engine;
 
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,9 +20,9 @@ import java.util.Map;
  *   - Operation      (arithmetic on memoryTableOperators_ values)
  *   - Case           (evaluate expression against memoryTableOperators_ values)
  */
-@Slf4j
 public class MVPMemory {
 
+    private static final Logger log = LogManager.getLogger(MVPMemory.class);
     /**
      * memoryTable_ — stores values that have been SET during processing.
      * Key = value (e.g. the category name like "Invoice"), Value = same.
@@ -64,14 +64,14 @@ public class MVPMemory {
     // -----------------------------------------------------------------------
 
     public void declareVariable(String name, String id, String type, String container,
-                                 String dataType, String value) {
+                                String dataType, String value) {
         MVPVariable v = new MVPVariable(name, id, type, container, dataType, value);
         operators.put(name, v);
         log.debug("[MVPMemory] DECLARE variable: {} = {}", name, value);
     }
 
     public void setVariable(String name, String id, String type, String container,
-                             String dataType, String value) {
+                            String dataType, String value) {
         operators.remove(name);
         MVPVariable v = new MVPVariable(name, id, type, container, dataType, value);
         operators.put(name, v);
@@ -97,7 +97,7 @@ public class MVPMemory {
     }
 
     public void storeOperationResult(String name, String id, String type,
-                                      String container, String dataType, String value) {
+                                     String container, String dataType, String value) {
         operators.put(name, new MVPVariable(name, id, type, container, dataType, value));
         log.debug("[MVPMemory] OPERATION result: {} = {}", name, value);
     }
@@ -117,7 +117,6 @@ public class MVPMemory {
     // -----------------------------------------------------------------------
     // Inner class: MVPVariable
     // -----------------------------------------------------------------------
-    @Data
     public static class MVPVariable {
         private final String name;
         private final String id;
@@ -134,6 +133,34 @@ public class MVPMemory {
             this.container = container;
             this.dataType  = dataType;
             this.value     = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getContainer() {
+            return container;
+        }
+
+        public String getDataType() {
+            return dataType;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
         }
     }
 }

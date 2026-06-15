@@ -4,8 +4,8 @@ import com.ruleengine.legacy.constants.EngineConstants;
 import com.ruleengine.legacy.model.LegacyEngineResult;
 import com.ruleengine.legacy.model.LegacyRuleProcess;
 import com.ruleengine.legacy.model.WorkflowStep;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.StringTokenizer;
@@ -25,12 +25,19 @@ import java.util.StringTokenizer;
  *   - InclusionWords match  → throw ContinueException → skip to next step
  *   - ExclusionWords match  → throw StopException → stop this process
  */
-@Slf4j
-@RequiredArgsConstructor
+
 public class LegacyProcessEvaluator {
 
     private final LegacyEngineContext context;
     private final MVPMemory           memory;
+
+    private static final Logger log = LogManager.getLogger(LegacyProcessEvaluator.class);
+
+
+    public LegacyProcessEvaluator(LegacyEngineContext context, MVPMemory memory) {
+        this.context = context;
+        this.memory = memory;
+    }
 
     /**
      * Run all steps in a process sequentially.

@@ -93,42 +93,6 @@ public class EmailPayload {
     public void setAiCategory(String aiCategory)         { this.aiCategory = aiCategory; }
     public void setAiConfidence(Double aiConfidence)     { this.aiConfidence = aiConfidence; }
 
-    // ── Builder ───────────────────────────────────────────────────────────────
-
-    public static Builder builder() { return new Builder(); }
-
-    public static class Builder {
-        private String from;
-        private String to;
-        private String subject;
-        private String bodyPlain;
-        private String bodyHtml;
-        private String date;
-        private String messageId;
-        private List<String> attachments;
-        private String aiCategory;
-        private Double aiConfidence;
-
-        public Builder from(String from)                     { this.from = from; return this; }
-        public Builder to(String to)                         { this.to = to; return this; }
-        public Builder subject(String subject)               { this.subject = subject; return this; }
-        public Builder bodyPlain(String bodyPlain)           { this.bodyPlain = bodyPlain; return this; }
-        public Builder bodyHtml(String bodyHtml)             { this.bodyHtml = bodyHtml; return this; }
-        public Builder date(String date)                     { this.date = date; return this; }
-        public Builder messageId(String messageId)           { this.messageId = messageId; return this; }
-        public Builder attachments(List<String> attachments) { this.attachments = attachments; return this; }
-        public Builder aiCategory(String aiCategory)         { this.aiCategory = aiCategory; return this; }
-        public Builder aiConfidence(Double aiConfidence)     { this.aiConfidence = aiConfidence; return this; }
-
-        public EmailPayload build() {
-            return new EmailPayload(from, to, subject, bodyPlain, bodyHtml,
-                    date, messageId, attachments,
-                    aiCategory, aiConfidence);
-        }
-    }
-
-    // ── toString ──────────────────────────────────────────────────────────────
-
     @Override
     public String toString() {
         return "EmailPayload{" +

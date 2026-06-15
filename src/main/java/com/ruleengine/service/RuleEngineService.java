@@ -3,13 +3,13 @@ package com.ruleengine.service;
 import com.ruleengine.ai.AIClassifierService;
 import com.ruleengine.model.*;
 import com.ruleengine.rules.EmailRule;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 /**
  * RuleEngineService — main orchestrator.
  *
@@ -20,14 +20,20 @@ import java.util.List;
  *   4. Result is persisted to H2
  *   5. Response is returned to caller (Zapier)
  */
-@Slf4j
+
 @Service
-@RequiredArgsConstructor
 public class RuleEngineService {
 
+    private final static Logger log = LogManager.getLogger(RuleEngineService.class);
     private final AIClassifierService        aiClassifier;
     private final List<EmailRule>            registeredRules;
     private final EmailRepository            emailRepository;
+
+    public RuleEngineService(AIClassifierService aiClassifier, List<EmailRule> registeredRules, EmailRepository emailRepository) {
+        this.aiClassifier = aiClassifier;
+        this.registeredRules = registeredRules;
+        this.emailRepository = emailRepository;
+    }
 
     public RuleEngineResponse evaluate(EmailPayload payload) {
         log.info("=== Processing email [{}] from {} ===",
@@ -37,11 +43,11 @@ public class RuleEngineService {
         // Step 1: AI Classification
         // ----------------------------------------------------------------
         AIClassificationResult aiResult = aiClassifier.classify(payload);
-        payload.setAiCategory(aiResult.getCategory());
-        payload.setAiConfidence(aiResult.getConfidence());
+        payload.setAiCategory(aiResult.category());
+        payload.setAiConfidence(aiResult.confidence());
 
         log.info("AI classified as: {} (confidence: {}, model: {})",
-                aiResult.getCategory(), aiResult.getConfidence(), aiResult.getModelUsed());
+                aiResult.category(), aiResult.confidence(), aiResult.modelUsed());
 
         // ----------------------------------------------------------------
         // Step 2: Evaluate rules in priority order (skip FallbackRule if others matched)
@@ -78,9 +84,9 @@ public class RuleEngineService {
                 .matchedRules(tracker.getMatchedRules())
                 .actionsExecuted(tracker.getActionsExecuted())
                 .status(tracker.hasMatches() ? "processed" : "no_match")
-                .aiCategory(aiResult.getCategory())
-                .aiConfidence(aiResult.getConfidence())
-                .aiModel(aiResult.getModelUsed())
+                .aiCategory(aiResult.category())
+                .aiConfidence(aiResult.confidence())
+                .aiModel(aiResult.modelUsed())
                 .build();
 
         // ----------------------------------------------------------------

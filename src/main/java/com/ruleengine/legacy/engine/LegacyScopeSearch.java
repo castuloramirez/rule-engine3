@@ -1,7 +1,8 @@
 package com.ruleengine.legacy.engine;
 
 import com.ruleengine.legacy.constants.EngineConstants;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 
 import java.util.HashMap;
@@ -20,7 +21,6 @@ import java.util.StringTokenizer;
  * All logic mirrors the original exactly — same StringTokenizer delimiters,
  * same negation logic, same field routing (Body/Subject/From/To/CC/BCC).
  */
-@Slf4j
 public class LegacyScopeSearch {
 
     private final String body;
@@ -31,6 +31,8 @@ public class LegacyScopeSearch {
     private final String bcc;
     private final MVPMemory memory;
     private final LegacyEngineContext context;
+
+    private static final Logger log = LogManager.getLogger(LegacyScopeSearch.class);
 
     public LegacyScopeSearch(String body, String subject, String from,
                               String to, String cc, String bcc,

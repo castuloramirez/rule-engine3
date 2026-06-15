@@ -101,4 +101,99 @@ public record WorkflowStep(
     private static String defaultIfNull(String value, String fallback) {
         return value != null ? value : fallback;
     }
+
+    @Override
+    public String id() {
+        return id;
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return type;
+    }
+
+    @Override
+    public String searchMethod() {
+        return searchMethod;
+    }
+
+    @Override
+    public String condition() {
+        return condition;
+    }
+
+    @Override
+    public String searchTerm() {
+        return searchTerm;
+    }
+
+    @Override
+    public String searchIn() {
+        return searchIn;
+    }
+
+    @Override
+    public String caseSensitive() {
+        return caseSensitive;
+    }
+
+    @Override
+    public String negation() {
+        return negation;
+    }
+
+    @Override
+    public String updateColumn() {
+        return updateColumn;
+    }
+
+    @Override
+    public String updateValue() {
+        return updateValue;
+    }
+
+    @Override
+    public String inclExcl() {
+        return inclExcl;
+    }
+
+    @Override
+    public String inMemory() {
+        return inMemory;
+    }
+
+    @Override
+    public String processId() {
+        return processId;
+    }
+
+    @Override
+    public String previous() {
+        return previous;
+    }
+
+    @Override
+    public String next() {
+        return next;
+    }
+
+    @Override
+    public String errorStateValue() {
+        return errorStateValue;
+    }
+
+    @Override
+    public String successStateValue() {
+        return successStateValue;
+    }
+
+    @Override
+    public int priority() {
+        return priority;
+    }
 }
