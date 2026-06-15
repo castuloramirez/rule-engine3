@@ -1,7 +1,5 @@
 package com.ruleengine.model;
 
-import lombok.Getter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +7,6 @@ import java.util.List;
  * Passed through the rule engine facts so each rule can record
  * what it matched and what actions it triggered.
  */
-@Getter
 public class ActionTracker {
 
     private final List<String> matchedRules    = new ArrayList<>();
@@ -24,5 +21,13 @@ public class ActionTracker {
 
     public boolean hasMatches() {
         return !matchedRules.isEmpty();
+    }
+
+    public List<String> getMatchedRules() {
+        return matchedRules;
+    }
+
+    public List<String> getActionsExecuted() {
+        return actionsExecuted;
     }
 }
