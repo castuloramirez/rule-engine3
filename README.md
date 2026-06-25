@@ -42,8 +42,8 @@ gmail-rule-engine/
 ## Quick Start
 
 ### Prerequisites
-- Java 17+
-- Maven 3.8+
+- Java 25
+- Apache Maven 3.9.6
 
 ### 1. Run the server
 ```bash
